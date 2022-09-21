@@ -1,0 +1,129 @@
+;TRANSCRIPT FILE NAMING SECTION-------------------------------------------------------------------
+;running purpose
+(define study "testing")
+
+;factor
+(define factor 1)
+
+;define CAD name
+(define fileName "wing")
+
+;transcript 
+(ti-menu-load-string (format #f "file start transcript ~a~a~~02d.trn" fileName study factor))
+
+;SIZING DEFINITION--------------------------------------------------------------------------------
+;existing part name from CAD --> wing 
+
+;define global parameters (ALL IN THE UNIT MM)
+(define global-min 10)
+(define global-max 50)
+(define global-growth-rate 1.2)
+
+;define proximity 
+(define min-prox-size 0.5)
+(define max-prox-size 30)
+(define prox-gap-cell 1)
+
+;define curvature
+(define min-face-size-wing 1)
+(define max-face-size-wing 10)
+
+;define mesh normal angle
+(define norm-angle 9)
+
+;define BOI 
+(define smallBOI 20)
+(define bigBOI 30)
+
+;define inflation parameters
+(define first-layer-height 0.01)
+(define number-of-layers 5)
+(define last-percent 20)
+
+;FLUENT meshing-----------------------------------------------------------------------------------
+;import CAD faceting 
+file import cad-options save-PMDB? yes 
+(ti-menu-load-string (format #f "file import cad , ~a.scdoc.pmdb , , , mm" fileName))
+
+;define global size-functions
+/size-functions set-global-controls global-min global-max global-growth-rate
+
+;scope BOI
+/scoped-sizing create smallBOI boi object-faces-and-edges yes no smallBOI* smallBOI global-growth-rate 
+/scoped-sizing create bigllBOI boi object-faces-and-edges yes no bigBOI* bigBOI global-growth-rate 
+
+
+;create sizing (proximity & curvature)
+/scoped-sizing create edge-zones-wing proximity edge-zone yes no wing* min-prox-size max-prox-size global-growth-rate prox-gap-cell
+/scope-sizing create face-zones-wing curvature face-zone yes no wing min-face-size-wing max-face-size-wing global-growth-rate norm-angle
+
+;compute sizing field 
+/scoped-sizing compute
+(ti-menu-load-string (format #f "file write-size-field ~a~~02d.sizing" fileName factor))
+
+;re-import
+/file import cad-options save-PMDB? no
+(ti-menu-load-string (format #f "file import cad-options tessellation cfd-surface-mesh yes ~a~~02d.sizing.sf" fileName factor))
+(ti-menu-load-string (format #f "file import cad , ~a.scdoc.pmdb , , , , mm yes" fileName))
+
+;mesh quality check
+/diagnostics quality general-improve objects (en*) skewness 0.95 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.9 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.8 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.7 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.6 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.5 40 30 yes
+
+/diagnostics quality collapse objects (en*) skewness 0.99 40 30 no
+/diagnostics quality collapse objects (en*) skewness 0.98 40 30 no
+/diagnostics quality collapse objects (en*) skewness 0.97 40 30 no
+/diagnostics quality collapse objects (en*) skewness 0.96 40 30 no
+/diagnostics quality collapse objects (en*) skewness 0.95 40 30 no
+/diagnostics quality collapse objects (en*) skewness 0.9 40 30 no
+/diagnostics quality collapse objects (en*) skewness 0.85 40 30 no
+
+/diagnostics quality general-improve objects (en*) skewness 0.95 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.9 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.8 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.7 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.6 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.5 40 30 yes
+
+/diagnostics quality general-improve objects (en*) skewness 0.95 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.9 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.8 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.7 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.6 40 30 yes
+/diagnostics quality general-improve objects (en*) skewness 0.5 40 30 yes
+
+;volume mesh
+/objects volumetric-regions compute en* no
+/objects vol-reg change-type en* (en*) fluid 
+
+;generate volume mesh
+/mesh poly controls cell-sizing size-field
+
+;generate inflation layers
+/mesh scoped-prisms create prism-wing last-ratio first-layer-height number-of-layers last-percent enclosure:enclosure-enclosure1 fluid-regions only-walls
+
+;mesh with polyhexcore
+/mesh auto-mesh en* yes scoped pyramids poly-hexcore yes
+
+;volume mesh quality improvement
+/mesh modify auto-node-move (*) (*) 0.99 50 120 yes 10
+/mesh modify auto-node-move (*) (*) 0.98 50 120 yes 10
+/mesh modify auto-node-move (*) (*) 0.96 50 120 yes 10
+/mesh modify auto-node-move (*) (*) 0.94 50 120 yes 10
+/mesh modify auto-node-move (*) (*) 0.92 50 120 yes 10
+/mesh modify auto-node-move (*) (*) 0.90 50 120 yes 10
+
+;scaling to metre (if required)
+/mesh manage scale-model 0.001 0.001 0.001
+
+;preparing mesh to solve 
+/mesh prepare-for-solve yes
+
+;write mesh 
+(ti-menu-load-string (format #f "file write-mesh mesh-~a-~a-~02d.msh.gz" fileName study factor))
+
+/exit ok
