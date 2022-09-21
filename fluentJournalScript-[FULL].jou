@@ -7,6 +7,7 @@
 
 ;define CAD name
 (define fileName "wing")
+(define partName "wing")
 
 ;transcript 
 (ti-menu-load-string (format #f "file start transcript ~a-~a-~a.trn" fileName study factor))
@@ -54,8 +55,8 @@ file import cad-options save-PMDB? yes
 
 
 ;create sizing (proximity & curvature)
-/scoped-sizing create edge-zones-wing proximity edge-zone yes no wing* min-prox-size max-prox-size global-growth-rate prox-gap-cell
-/scope-sizing create face-zones-wing curvature face-zone yes no wing min-face-size-wing max-face-size-wing global-growth-rate norm-angle
+/scoped-sizing create edge-zones-wing proximity edge-zone yes no partName* min-prox-size max-prox-size global-growth-rate prox-gap-cell
+/scope-sizing create face-zones-wing curvature face-zone yes no partName min-face-size-wing max-face-size-wing global-growth-rate norm-angle
 
 ;compute sizing field 
 /scoped-sizing compute
@@ -171,7 +172,7 @@ file import cad-options save-PMDB? yes
 /solve set discretization-scheme omega 1
 
 ;reports setting
-/solve report-definitions add lift-wing lift force-vector 0 0 1 thread-ids (wing) quit
+/solve report-definitions add lift-wing lift force-vector 0 0 1 thread-ids (partName) quit
 
 ;write case file for follow up
 (ti-menu-load-string (format #f "file write-case before-solve-~a-~a-~a.cas.gz" fileName study factor))
@@ -199,7 +200,7 @@ file import cad-options save-PMDB? yes
 (ti-menu-load-string (format #f "file write-data solved-~a-~a-~a.dat.gz" fileName study factor))
 
 ;report results
-(ti-menu-load-string (format #f "report forces wall-forces no (wing) 0 0 1 yes lift-~a-~a-~a.csv" fileName study factor))
+(ti-menu-load-string (format #f "report forces wall-forces no (partName) 0 0 1 yes lift-~a-~a-~a.csv" fileName study factor))
 (ti-menu-load-string (format #f "report summary yes fluent-summary-~a-~a-~a.csv" fileName study factor))
 
 /exit ok

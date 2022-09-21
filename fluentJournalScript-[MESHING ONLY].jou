@@ -7,6 +7,7 @@
 
 ;define CAD name
 (define fileName "wing")
+(define partName "wing")
 
 ;transcript 
 (ti-menu-load-string (format #f "file start transcript ~a~a~~02d.trn" fileName study factor))
@@ -54,8 +55,8 @@ file import cad-options save-PMDB? yes
 
 
 ;create sizing (proximity & curvature)
-/scoped-sizing create edge-zones-wing proximity edge-zone yes no wing* min-prox-size max-prox-size global-growth-rate prox-gap-cell
-/scope-sizing create face-zones-wing curvature face-zone yes no wing min-face-size-wing max-face-size-wing global-growth-rate norm-angle
+/scoped-sizing create edge-zones-wing proximity edge-zone yes no partName* min-prox-size max-prox-size global-growth-rate prox-gap-cell
+/scope-sizing create face-zones-wing curvature face-zone yes no partName min-face-size-wing max-face-size-wing global-growth-rate norm-angle
 
 ;compute sizing field 
 /scoped-sizing compute
